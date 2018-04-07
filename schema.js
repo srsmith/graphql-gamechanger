@@ -17,6 +17,14 @@ const GameType = new GraphQLObjectType({
             type: GraphQLString,
             resolve: (root, args) => JSON.parse(root).stream.utc_start
         },
+        homeTeamId: {
+            type: GraphQLString,
+            resolve: (root, args) => JSON.parse(root).stream.home_id   
+        },
+        awayTeamId: {
+            type: GraphQLString,
+            resolve: (root, args) => JSON.parse(root).stream.away_id   
+        },
         players: {
             type: new GraphQLList(PlayerType),
             resolve: (root, args) => JSON.parse(root).stream.players
@@ -24,7 +32,6 @@ const GameType = new GraphQLObjectType({
         events: {
             type: new GraphQLList(EventType),
             args: {
-                teamId: { type: GraphQLList(GraphQLString) },
                 excludeCode: { type: GraphQLString }
             },
             resolve: (root, args) => { 
@@ -40,37 +47,128 @@ const EventType = new GraphQLObjectType({
     description: 'Represents events in a game',
     fields: () => ({
         inning: {
-            type: GraphQLString,
-            resolve: (root, args) => root.inning
+            type: GraphQLInt,
+            resolve: (root, args) => parseInt(root.inning, 10)
         },
         code: {
-            type: GraphQLString,
-            resolve: (root, args) => root.code
+            type: GraphQLString
         },
         shortDescription: {
             type: GraphQLString,
             resolve: (root, args) => root.short_description
         },
         description: {
-            type: GraphQLString,
-            resolve: (root, args) => root.description
+            type: GraphQLString
         },
         timestamp: {
-            type: GraphQLString,
-            resolve: (root, args) => root.timestamp
+            type: GraphQLString
         },
         participants: {
             type: new GraphQLList(ParticipantType),
-            resolve: (root, args) => { 
-                //console.log(root.participants);
-                return root.participants
-            }
+            resolve: (root, args) =>  root.participants
         },
+        result: {
+            type: ResultType
+        },
+        score: {
+            type: new GraphQLObjectType({
+                name: 'ScoreType',
+                description: 'Game score for this event',
+                fields: () => ({
+                    home: {
+                        type: GraphQLInt
+                    },
+                    away: {
+                        type: GraphQLInt
+                    }
+                })
+            }),
+        }
     })
 })
 
+const ResultType = new GraphQLObjectType({
+    name: 'ResultType',
+    description: 'Represents the outcome of an event in the game',
+    fields: () => ({
+        count: {
+            type: new GraphQLObjectType({
+                name: 'CountType',
+                description: 'The ball/strike/out count for this result',
+                fields: () => ({
+                    balls: {
+                        type: GraphQLInt
+                    },
+                    strikes: {
+                        type: GraphQLInt
+                    },
+                    outs: {
+                        type: GraphQLInt
+                    }
+                })
+            }),
+            resolve: (root, args) => root.count
+        },
+        bases: {
+            type: new GraphQLList(new GraphQLObjectType({
+                name: 'BasesType',
+                description: 'The bases for this event',
+                fields: () => ({
+                    base: {
+                        type: GraphQLInt
+                    },
+                    playerId: {
+                        type: GraphQLString,
+                        resolve: (root, args) => root.player['$id']
+                    },
+                })
+            })),
+            resolve: (root, args) => root.situation.bases
+        },
+        // pitcherId: {
+        //     type: GraphQLString,
+        //     resolve: (root, args) => root.situation.pitcher['$id']
+        // },
+        // batterId: {
+        //     type: GraphQLString,
+        //     resolve: (root, args) => root.situation.batter['$id']
+        // }
+        // situation: {
+            
+        // }
+        // "result": {
+        //     "count": { "outs": 1, "strikes": 0, "balls": 0 },
+        //     "situation": {
+        //       "inning": 1,
+        //       "home_lineupindex": 2,
+        //       "pitcher": {
+        //         "$ref": "player",
+        //         "$id": "59ac7f5b37f2575f17000003",
+        //         "$db": ""
+        //       },
+        //       "bases": [
+        //         {
+        //           "base": 1,
+        //           "player": {
+        //             "$ref": "player",
+        //             "$id": "59ee7f5b3793048ef700002a",
+        //             "$db": ""
+        //           }
+        //         }
+        //       ],
+        //       "batter": {
+        //         "$ref": "player",
+        //         "$id": "59ee7f5b3793048ef700002a",
+        //         "$db": ""
+        //       },
+        //       "half": 0,
+        //       "away_lineupindex": 0
+        //     },
+    }),
+})
+
 const PlayerType = new GraphQLObjectType({
-    name: 'Player',
+    name: 'PlayerType',
     description: 'Represents a player in the game',
     fields: () => ({
         id: {
@@ -94,8 +192,11 @@ const PlayerType = new GraphQLObjectType({
             resolve: (root, args) => root.throw_hand
         },
         number: {
+            type: GraphQLString
+        },
+        teamId: {
             type: GraphQLString,
-            resolve: (root, args) => root.number
+            resolve: (root, args) => root.team['$id']
         },
 
 
@@ -107,26 +208,15 @@ const ParticipantType = new GraphQLObjectType({
     description: 'Represents a player involved in a given play',
     fields: () => ({
         roles: {
-            type: GraphQLList(GraphQLString),
-            resolve: (root, args) => { 
-                return root.roles;
-            }
+            type: GraphQLList(GraphQLString)
         },
         teamId: {
             type: GraphQLString,
             resolve: (root, args) => root.team_id
         },
         player: {
-            type: PlayerType,
-            resolve: (root, args) => root.player
+            type: PlayerType
         }
-        // "roles": ["new"],
-        // "team_id": "59ee7f5b3793048df400000f",
-        // "player": {
-        //   "$ref": "player",
-        //   "$id": "59ee7f5b3793048e9d000022",
-        //   "$db": ""
-        // }
     }),
 })
 
