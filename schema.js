@@ -23,9 +23,13 @@ const GameType = new GraphQLObjectType({
         },
         events: {
             type: new GraphQLList(EventType),
+            args: {
+                teamId: { type: GraphQLList(GraphQLString) },
+                excludeCode: { type: GraphQLString }
+            },
             resolve: (root, args) => { 
-                console.log(`args: `, args);
-                return JSON.parse(root).events[0]
+                const { teamId, excludeCode } = args
+                return JSON.parse(root).events[0].filter(event => event.code != excludeCode);
             }
         }
     })
@@ -129,14 +133,13 @@ const ParticipantType = new GraphQLObjectType({
 module.exports = new GraphQLSchema({
     query: new GraphQLObjectType({
         name: 'Query',
-        description: '...',
+        description: 'Queries GameChanger for a specific game with a specific account #',
         fields: () => ({
             game: {
                 type: GameType,
                 args: {
                     accountId: { type: GraphQLString },
-                    gameId: { type: GraphQLString },
-                    eventTypes: { type: GraphQLList(GraphQLString) }
+                    gameId: { type: GraphQLString }
                 },
                 resolve: (root, args, context) =>  context.gameLoader.load(args)
             }
