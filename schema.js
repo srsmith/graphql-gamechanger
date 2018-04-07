@@ -23,7 +23,10 @@ const GameType = new GraphQLObjectType({
         },
         events: {
             type: new GraphQLList(EventType),
-            resolve: (root, args) => JSON.parse(root).events[0]
+            resolve: (root, args) => { 
+                console.log(`args: `, args);
+                return JSON.parse(root).events[0]
+            }
         }
     })
 })
@@ -52,7 +55,13 @@ const EventType = new GraphQLObjectType({
             type: GraphQLString,
             resolve: (root, args) => root.timestamp
         },
-        
+        participants: {
+            type: new GraphQLList(ParticipantType),
+            resolve: (root, args) => { 
+                //console.log(root.participants);
+                return root.participants
+            }
+        },
     })
 })
 
@@ -62,7 +71,7 @@ const PlayerType = new GraphQLObjectType({
     fields: () => ({
         id: {
             type: GraphQLString,
-            resolve: (root, args) => root.id
+            resolve: (root, args) =>  root.id || root['$id']
         },
         firstName: {
             type: GraphQLString,
@@ -89,6 +98,34 @@ const PlayerType = new GraphQLObjectType({
     })
 })
 
+const ParticipantType = new GraphQLObjectType({
+    name: 'Particpant',
+    description: 'Represents a player involved in a given play',
+    fields: () => ({
+        roles: {
+            type: GraphQLList(GraphQLString),
+            resolve: (root, args) => { 
+                return root.roles;
+            }
+        },
+        teamId: {
+            type: GraphQLString,
+            resolve: (root, args) => root.team_id
+        },
+        player: {
+            type: PlayerType,
+            resolve: (root, args) => root.player
+        }
+        // "roles": ["new"],
+        // "team_id": "59ee7f5b3793048df400000f",
+        // "player": {
+        //   "$ref": "player",
+        //   "$id": "59ee7f5b3793048e9d000022",
+        //   "$db": ""
+        // }
+    }),
+})
+
 module.exports = new GraphQLSchema({
     query: new GraphQLObjectType({
         name: 'Query',
@@ -97,13 +134,11 @@ module.exports = new GraphQLSchema({
             game: {
                 type: GameType,
                 args: {
-                    gameId: { type: GraphQLString }
+                    accountId: { type: GraphQLString },
+                    gameId: { type: GraphQLString },
+                    eventTypes: { type: GraphQLList(GraphQLString) }
                 },
-                resolve: (root, args, context) => context.gameLoader.load(args.gameId)
-                // resolve: (root, args) => fetch(
-                //     'https://push.gamechanger.io/push/game/59ee7f5b3793048e3f00001e/stream/59ee7f5b3793048ff9000037'
-                // )
-                // .then(response => response.text())
+                resolve: (root, args, context) =>  context.gameLoader.load(args)
             }
         })
     })
