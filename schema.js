@@ -32,11 +32,16 @@ const GameType = new GraphQLObjectType({
         events: {
             type: new GraphQLList(EventType),
             args: {
-                excludeCode: { type: GraphQLString }
+                excludeCodes: { type: GraphQLList(GraphQLString) },
+                excludeShortDesc: { type: GraphQLList(GraphQLString) }
             },
             resolve: (root, args) => { 
-                const { teamId, excludeCode } = args
-                return JSON.parse(root).events[0].filter(event => event.code != excludeCode);
+                const { excludeCodes = [], excludeShortDesc = []} = args
+                return JSON.parse(root).events[0].filter(event => { 
+                    return !excludeCodes.includes(event.code);
+                }).filter(event => { 
+                    return !excludeShortDesc.includes(event.short_description)
+                });
             }
         }
     })
