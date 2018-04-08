@@ -37,11 +37,9 @@ const GameType = new GraphQLObjectType({
             },
             resolve: (root, args) => { 
                 const { excludeCodes = [], excludeShortDesc = []} = args
-                return JSON.parse(root).events[0].filter(event => { 
-                    return !excludeCodes.includes(event.code);
-                }).filter(event => { 
-                    return !excludeShortDesc.includes(event.short_description)
-                });
+                return JSON.parse(root).events[0]
+                .filter(event => !excludeCodes.includes(event.code))
+                .filter(event => !excludeShortDesc.includes(event.short_description));
             }
         }
     })
