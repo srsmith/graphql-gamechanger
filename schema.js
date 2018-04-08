@@ -1,5 +1,6 @@
 const { GraphQLSchema, 
         GraphQLObjectType, 
+        GraphQLInputObjectType,
         GraphQLString, 
         GraphQLList, 
         GraphQLInt } = require('graphql');
@@ -33,13 +34,25 @@ const GameType = new GraphQLObjectType({
             type: new GraphQLList(EventType),
             args: {
                 excludeCodes: { type: GraphQLList(GraphQLString) },
-                excludeShortDesc: { type: GraphQLList(GraphQLString) }
+                excludeShortDesc: { type: GraphQLList(GraphQLString) },
+                includeParticipants: { type: GraphQLList(ParticipantQueryType)}
             },
             resolve: (root, args) => { 
-                const { excludeCodes = [], excludeShortDesc = []} = args
+                const { excludeCodes = [], excludeShortDesc = [], includeParticipants = []} = args
                 return JSON.parse(root).events[0]
                 .filter(event => !excludeCodes.includes(event.code))
-                .filter(event => !excludeShortDesc.includes(event.short_description));
+                .filter(event => !excludeShortDesc.includes(event.short_description))
+                .filter(event => {
+                    return event.participants.some(participant => {
+                        return includeParticipants.some(ip => {
+                            if (ip.role) {
+                                return ip.playerId === participant.player['$id'] && participant.roles.includes(ip.role)
+                            } else {
+                                return ip.playerId === participant.player['$id']
+                            }
+                        })
+                    })
+                })
             }
         }
     })
@@ -176,7 +189,7 @@ const PlayerType = new GraphQLObjectType({
     fields: () => ({
         id: {
             type: GraphQLString,
-            resolve: (root, args) =>  root.id || root['$id']
+            resolve: (root, args) =>  root.id 
         },
         firstName: {
             type: GraphQLString,
@@ -207,7 +220,7 @@ const PlayerType = new GraphQLObjectType({
 })
 
 const ParticipantType = new GraphQLObjectType({
-    name: 'Particpant',
+    name: 'ParticpantType',
     description: 'Represents a player involved in a given play',
     fields: () => ({
         roles: {
@@ -217,8 +230,25 @@ const ParticipantType = new GraphQLObjectType({
             type: GraphQLString,
             resolve: (root, args) => root.team_id
         },
-        player: {
-            type: PlayerType
+        playerId: {
+            type: GraphQLString,
+            resolve: (root, args) => root.player['$id']
+        }
+    }),
+})
+
+const ParticipantQueryType = new GraphQLInputObjectType({
+    name: 'ParticpantQueryType',
+    description: 'Represents a player involved in a given play',
+    fields: () => ({
+        role: {
+            type: GraphQLString
+        },
+        teamId: {
+            type: GraphQLString
+        },
+        playerId: {
+            type: GraphQLString
         }
     }),
 })
