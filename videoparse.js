@@ -1,7 +1,7 @@
 
 require('isomorphic-fetch');
 const moment = require('moment');
-const fs = require('file-system');
+const fs = require('fs');
 
 const params = { 
     gameId: process.argv[3] || `5aa57f5b376308472300001a`,
@@ -67,14 +67,13 @@ fetch(`http://localhost:8080/graphql`, {
         
         let eventTs = moment(event.timestamp);
         let prevEvent = allEvents.slice(0, i).reverse().find(e => moment(e.timestamp).isBefore(eventTs));
-        let prevEventTs = moment(prevEvent.timestamp);
+        let prevEventTs = prevEvent ? moment(prevEvent.timestamp) : pbp.firstEventTs;
         let durationFromFirst = moment.duration(prevEventTs.diff(pbp.firstEventTs));
-        pbp.events.push({ ...event,
+        pbp.events.push({ ... event,
             time: {
                 firstEventTs: pbp.firstEventTs,
                 prevEventTs: prevEventTs,
                 eventTs: eventTs,
-                prevEventDescription: prevEvent.description,
                 startClip: moment.utc(durationFromFirst.asMilliseconds()).format('hh:mm:ss'),
                 clipLengthSeconds: eventTs.diff(prevEventTs, 'seconds')
             }
@@ -82,4 +81,12 @@ fetch(`http://localhost:8080/graphql`, {
     }
     return pbp
 }, {}))
-.then(pbp =>  console.log(`reduced events`, JSON.stringify(pbp,null,2)));
+.then(pbp =>  { 
+    fs.writeFile(`./output/${params.gameId}.json`, JSON.stringify(pbp.events, null, 2), (err) => {
+        if (err) {
+            console.error(err);
+            return;
+        };
+        console.log(`${pbp.events.length} Events written to ./output/${params.gameId}.json`);
+    });
+});
