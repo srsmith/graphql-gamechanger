@@ -79,6 +79,10 @@ const EventType = new GraphQLObjectType({
         timestamp: {
             type: GraphQLString
         },
+        firstSave: {
+            type: GraphQLString,
+            resolve: (root, args) => root.first_save
+        },
         participants: {
             type: new GraphQLList(ParticipantType),
             resolve: (root, args) =>  root.participants

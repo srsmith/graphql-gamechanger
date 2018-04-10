@@ -17,10 +17,18 @@
   },
   "homepage": "https://github.com/srsmith/graphql-gamechanger#readme",
   "dependencies": {
+    "dataloader": "^1.4.0",
+    "date-diff": "^0.1.3",
     "express": "^4.16.2",
     "express-graphql": "^0.6.11",
+    "file-system": "^2.2.2",
+    "fs": "0.0.1-security",
     "graphql": "^0.12.3",
+    "https": "^1.0.0",
+    "isomorphic-fetch": "^2.2.1",
+    "moment": "^2.22.0",
     "node-fetch": "^1.7.3",
+    "path": "^0.12.7",
     "save": "^2.3.2"
   }
 }
